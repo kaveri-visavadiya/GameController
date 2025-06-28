@@ -1,7 +1,10 @@
 # EE333 - Game Controller Project
 
 ## Group Members:
-22110208 - Raghavpravin K S, 22110269 - Tamizhanban A G, 22110114 - Kaveri Visavadiya, 22110132 - Mahi Agarwal
+22110208 - Raghavpravin K S
+22110269 - Tamizhanban A G
+22110114 - Kaveri Visavadiya
+22110132 - Mahi Agarwal
 
 ## Project Description
 Implementation of game controller using STM32 board and USB HID interface class.

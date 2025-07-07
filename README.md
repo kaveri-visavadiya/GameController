@@ -10,7 +10,7 @@
 22110132 - Mahi Agarwal
 
 ## Project Description
-Implementation of game controller using STM32 board and USB HID interface class.
+Implementation of game controller using STM32 board and [USB HID interface class](https://en.wikipedia.org/wiki/USB_human_interface_device_class).
 
 ## Components Used
 Joysticks, pushbuttons, potentiometers, PCB board, jumper wires, acrylic sheet, STM32F439ZI board

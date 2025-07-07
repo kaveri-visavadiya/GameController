@@ -22,18 +22,19 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#define NUM_ADC_CHANNEL 2
+#include "game_controller.h"
+#define NUM_ADC_CHANNEL 4
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef struct{
-
-	uint8_t buttons;
-	uint8_t left;
-	uint8_t right;
-
-} joystickReport;
+// typedef struct {
+//   uint16_t buttons;
+//   uint8_t left_x;
+//   uint8_t left_y;
+//   uint8_t right_x;
+//   uint8_t right_y;
+// } game_controller_report;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -56,9 +57,15 @@ TIM_HandleTypeDef htim3;
 volatile uint8_t adcBuf[NUM_ADC_CHANNEL] = {0};
 volatile uint8_t btn1;
 volatile uint8_t btn2;
-
-joystickReport joystickReportContainer;
-
+volatile uint8_t btn3;
+volatile uint8_t btn4;
+volatile uint8_t btn5;
+volatile uint8_t btn6;
+volatile uint8_t btn7;
+volatile uint8_t btn8;
+volatile uint8_t btn9;
+volatile uint8_t btn10;
+// game_controller_report game_controller;
 extern USBD_HandleTypeDef hUsbDeviceFS;
 /* USER CODE END PV */
 
@@ -69,13 +76,12 @@ static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
-
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc){
-
-	joystickReportContainer.left = (uint8_t) adcBuf[0] - 128;
-	joystickReportContainer.right = (uint8_t) adcBuf[1] - 128;
-};
-
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+  game_controller.left_x = adcBuf[0];
+  game_controller.left_y = adcBuf[1];
+  game_controller.right_x = adcBuf[2];
+  game_controller.right_y = adcBuf[3];
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -117,7 +123,7 @@ int main(void)
   MX_TIM3_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) adcBuf, NUM_ADC_CHANNEL);
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcBuf, NUM_ADC_CHANNEL);
   HAL_TIM_Base_Start(&htim3);
   /* USER CODE END 2 */
 
@@ -125,17 +131,35 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  btn1 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_10);
-	  btn2 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_11);
+    btn1 = HAL_GPIO_ReadPin(button_1_GPIO_Port, button_1_Pin);
+    btn2 = HAL_GPIO_ReadPin(button_2_GPIO_Port, button_2_Pin);
+    btn3 = HAL_GPIO_ReadPin(button_3_GPIO_Port, button_3_Pin);
+    btn4 = HAL_GPIO_ReadPin(button_4_GPIO_Port, button_4_Pin);
+    btn5 = HAL_GPIO_ReadPin(button_5_GPIO_Port, button_5_Pin);
+    btn6 = HAL_GPIO_ReadPin(button_6_GPIO_Port, button_6_Pin);
+    btn7 = HAL_GPIO_ReadPin(button_7_GPIO_Port, button_7_Pin);
+    btn8 = HAL_GPIO_ReadPin(button_8_GPIO_Port, button_8_Pin);
+    btn9 = HAL_GPIO_ReadPin(button_9_GPIO_Port, button_9_Pin);
+    btn10 = HAL_GPIO_ReadPin(button_10_GPIO_Port, button_10_Pin);
 
-	  joystickReportContainer.buttons = (btn1<<1) | (btn2);
 
-	  USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joystickReportContainer, 3);
+    game_controller.buttons = 0;
+    game_controller.buttons |= btn1 << 0;
+    game_controller.buttons |= btn2 << 1;
+    game_controller.buttons |= btn3 << 2;
+    game_controller.buttons |= btn4 << 3;
+    game_controller.buttons |= btn5 << 4;
+    game_controller.buttons |= btn6 << 5;
+    game_controller.buttons |= btn7 << 6;
+    game_controller.buttons |= btn8 << 7;
+    game_controller.buttons |= btn9 << 8;
+    game_controller.buttons |= btn10 << 9;
 
-	  HAL_Delay(10);
+    USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, (uint8_t *)&game_controller, sizeof(game_controller));
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
@@ -214,7 +238,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T3_TRGO;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 2;
+  hadc1.Init.NbrOfConversion = 4;
   hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -234,8 +258,26 @@ static void MX_ADC1_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Channel = ADC_CHANNEL_3;
   sConfig.Rank = 2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_8;
+  sConfig.Rank = 3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Rank = 4;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -319,15 +361,55 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(blue_led_GPIO_Port, blue_led_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : button_1_Pin button_5_Pin button_2_Pin button_3_Pin
+                           button_4_Pin */
+  GPIO_InitStruct.Pin = button_1_Pin|button_5_Pin|button_2_Pin|button_3_Pin
+                          |button_4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : button_6_Pin button_7_Pin button_8_Pin */
+  GPIO_InitStruct.Pin = button_6_Pin|button_7_Pin|button_8_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : button_9_Pin */
+  GPIO_InitStruct.Pin = button_9_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(button_9_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : button_10_Pin */
+  GPIO_InitStruct.Pin = button_10_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(button_10_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB10 PB11 */
   GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : blue_led_Pin */
+  GPIO_InitStruct.Pin = blue_led_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(blue_led_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
